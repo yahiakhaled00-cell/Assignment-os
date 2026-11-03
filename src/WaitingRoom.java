@@ -21,7 +21,6 @@ public class WaitingRoom {
            patients.offer(newPatient);
         }
     }
-    // a3ooo
    
     public Patient removePatient() throws InterruptedException {
         if (isEmptyRoom()) {
