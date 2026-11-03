@@ -1,60 +1,51 @@
 import java.util.Queue;
 import java.util.ArrayDeque;
 
-
-public class WaitingRoom {
-    private 
-    Queue<Patient> patients;
-    int maxNumber;
+public class WaitingRoom { 
+    private Queue<Patient> patients;
+    private Semaphore empty;
+    private Semaphore full;
+    private  Semaphore mutex;
 
     public WaitingRoom(int capacity) {
-        this.maxNumber = capacity;
         patients = new ArrayDeque<>(capacity);
+        empty = new Semaphore(capacity);
+        full = new Semaphore(0);
+        mutex = new Semaphore(1);
     }
 
     
     public void addPatient(Patient newPatient) throws InterruptedException {
-        if (isFullRoom()) {
-            System.out.println("Waiting room is Full");
+        if (!empty.tryAcquire(0)) {
+            Hospital.log("The waiting room is full.");
+            Hospital.log("p"+newPatient.getPatientId()+ " is waiting outside for an available seat.");
+
+            empty.acquire();
         }
-        else {
-           patients.offer(newPatient);
+            mutex.acquire();
+        try{
+            patients.offer(newPatient);
+            Hospital.log("p"+newPatient.getPatientId()+" Entered the waiting room.");
+        } finally {
+            mutex.release();
         }
+           full.release();
+       
     }
    
-    public Patient removePatient() throws InterruptedException {
-        if (isEmptyRoom()) {
-            System.out.println("Waiting room is empty");
-            return null;
-        } else {
-            Patient removedPatient = patients.poll();
-            return removedPatient;
-        }
+    public Patient takePatient() throws InterruptedException {
+        full.acquire();
+        mutex.acquire();
+
+        Patient removedPatient;
+        try {
+        removedPatient = patients.poll();
+    } finally {
+        mutex.release();
+    }
+        empty.release();
+        
+         return removedPatient;
     }
     
-
-    private boolean isFullRoom() {
-        if (patients.size() == maxNumber) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-
-    private boolean isEmptyRoom() {
-        if (patients.size() == 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private int getCurrentPatientNum() {
-        return patients.size();
-    }
-
-    public void sendBack(Patient p) {
-        
-    }
 }

@@ -30,9 +30,9 @@ public class Doctor extends Thread {
             Patient patient = null;
 
             try {
-                patient = waitingRoom.take();
+                patient = waitingRoom.takePatient();
                 Hospital.log("Doctor " + doctorId + " took a patient from the waiting room.");
-                boolean roomAcquired = treatmentRooms.acquireRoom();
+                boolean roomAcquired = treatmentRooms.tryAcquiringRoom();
                 if (roomAcquired) {
 
                     try {
@@ -46,13 +46,18 @@ public class Doctor extends Thread {
                 }
                 else {
                     Hospital.log("Doctor " + doctorId + " could not get a treatment room within 3 seconds.");
-                    waitingRoom.sendBack(patient);
+                    waitingRoom.addPatient(patient);
                     patient = null;
                 }
             }
             catch (InterruptedException e) {
                 if (patient != null) {
-                    waitingRoom.sendBack(patient);
+                    try {
+                        waitingRoom.addPatient(patient);
+                    }
+                    catch (InterruptedException requeueInterrupted) {
+                        e.addSuppressed(requeueInterrupted);
+                    }
                 }
                 Thread.currentThread().interrupt();
                 break;
