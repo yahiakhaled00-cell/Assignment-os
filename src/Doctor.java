@@ -1,53 +1,56 @@
 import java.util.Random;
+
 public class Doctor extends Thread {
 
-    private int doctorId;
-    private WaitingRoom waitingRoom;
-    private TreatmentRooms treatmentRooms;
-    private Random random;
+    private final int doctorId;
+    private final WaitingRoom waitingRoom;
+    private final TreatmentRooms treatmentRooms;
+    private final Random random = new Random();
 
     public Doctor(int doctorId, WaitingRoom waitingRoom, TreatmentRooms treatmentRooms) {
         this.doctorId = doctorId;
         this.waitingRoom = waitingRoom;
         this.treatmentRooms = treatmentRooms;
-        this.random = new Random();
     }
 
-
-    private void treatPatient(Patient patient)
-        throws InterruptedException{
-        int duration = random.nextInt(5) + 1;
-
-        Hospital.log("Doctor " + doctorId + " started treating a patient for " + duration + " seconds.");
-        Thread.sleep(duration * 1000L);
-        patient.finishTreatment();
-        Hospital.log("Doctor " + doctorId + " finished treating a patient.");
+    private void treatPatient(Patient patient) throws InterruptedException {
+        int pid = patient.getPatientId();
+        Hospital.log("Doctor " + doctorId + " begins treating P" + pid + ".");
+        Thread.sleep((random.nextInt(5) + 1) * 1000L);
+        Hospital.log("Doctor " + doctorId + " finished treating P" + pid + ".");
     }
 
-        @Override
+    @Override
         public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             Patient patient = null;
 
             try {
                 patient = waitingRoom.takePatient();
-                Hospital.log("Doctor " + doctorId + " took a patient from the waiting room.");
-                boolean roomAcquired = treatmentRooms.tryAcquiringRoom();
-                if (roomAcquired) {
+                int pid = patient.getPatientId();
+                Hospital.log("Doctor " + doctorId + " is assigned to P" + pid + ".");
+                Hospital.log("Doctor " + doctorId + " is trying to acquire a treatment room.");
 
+                if (treatmentRooms.tryAcquiringRoom()) {
+                    Hospital.log("Doctor " + doctorId + " acquired a treatment room.");
                     try {
                         treatPatient(patient);
-                        patient = null;
                     }
                     finally {
                         treatmentRooms.releaseRoom();
                         Hospital.log("Doctor " + doctorId + " released the treatment room.");
                     }
+                    Hospital.log("Doctor " + doctorId + " is now available.");
+                    patient.finishTreatment();   
+                    patient = null;
                 }
                 else {
-                    Hospital.log("Doctor " + doctorId + " could not get a treatment room within 3 seconds.");
+                    Hospital.log("Doctor " + doctorId + " could not acquire a treatment room.");
+                    Hospital.log("Doctor " + doctorId + " is sending P" + pid
+                        + " back to the waiting room.");
                     waitingRoom.addPatient(patient);
                     patient = null;
+                    Hospital.log("Doctor " + doctorId + " is now available.");
                 }
             }
             catch (InterruptedException e) {
@@ -66,4 +69,3 @@ public class Doctor extends Thread {
         Hospital.log("Doctor " + doctorId + " stopped working.");
     }
 }
-

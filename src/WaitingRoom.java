@@ -18,14 +18,14 @@ public class WaitingRoom {
     public void addPatient(Patient newPatient) throws InterruptedException {
         if (!empty.tryAcquire(0)) {
             Hospital.log("The waiting room is full.");
-            Hospital.log("p"+newPatient.getPatientId()+ " is waiting outside for an available seat.");
+            Hospital.log("P" + newPatient.getPatientId() + " is waiting outside for an available seat.");
 
             empty.acquire();
         }
             mutex.acquire();
         try{
             patients.offer(newPatient);
-            Hospital.log("p"+newPatient.getPatientId()+" Entered the waiting room.");
+            Hospital.log("P" + newPatient.getPatientId() + " entered the waiting room.");
         } finally {
             mutex.release();
         }
