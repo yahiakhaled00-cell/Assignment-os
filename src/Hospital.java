@@ -43,7 +43,10 @@ public class Hospital {
         log(sb.toString().trim());
 
         for (Doctor d : doctors) d.start();
-        for (Patient p : patients) p.start();
+        for (Patient p : patients) {
+                p.start();
+                Thread.sleep(100);   
+            }
 
         for (Patient p : patients) p.join();
 

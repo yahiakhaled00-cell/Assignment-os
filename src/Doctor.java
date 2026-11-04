@@ -16,7 +16,7 @@ public class Doctor extends Thread {
     private void treatPatient(Patient patient) throws InterruptedException {
         int pid = patient.getPatientId();
         Hospital.log("Doctor " + doctorId + " begins treating P" + pid + ".");
-        Thread.sleep((random.nextInt(5) + 1) * 1000L);
+        Thread.sleep((random.nextInt(3) + 4) * 1000L);
         Hospital.log("Doctor " + doctorId + " finished treating P" + pid + ".");
     }
 
@@ -37,8 +37,8 @@ public class Doctor extends Thread {
                         treatPatient(patient);
                     }
                     finally {
-                        treatmentRooms.releaseRoom();
                         Hospital.log("Doctor " + doctorId + " released the treatment room.");
+                        treatmentRooms.releaseRoom();   
                     }
                     Hospital.log("Doctor " + doctorId + " is now available.");
                     patient.finishTreatment();   
@@ -48,7 +48,7 @@ public class Doctor extends Thread {
                     Hospital.log("Doctor " + doctorId + " could not acquire a treatment room.");
                     Hospital.log("Doctor " + doctorId + " is sending P" + pid
                         + " back to the waiting room.");
-                    waitingRoom.addPatient(patient);
+                    patient.returnToWaitingRoom();
                     patient = null;
                     Hospital.log("Doctor " + doctorId + " is now available.");
                 }
@@ -66,6 +66,6 @@ public class Doctor extends Thread {
                 break;
             }
         }
-        Hospital.log("Doctor " + doctorId + " stopped working.");
+        // Hospital.log("Doctor " + doctorId + " stopped working.");
     }
 }

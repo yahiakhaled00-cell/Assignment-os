@@ -1,36 +1,41 @@
-import java.util.concurrent.CountDownLatch;
 public class Patient extends Thread {
 
     private final int id;
     private final WaitingRoom waitingRoom;
 
-    private final CountDownLatch treatmentFinished = new CountDownLatch(1);
+    private final Semaphore signal = new Semaphore(0);
+    private volatile boolean treated = false;
 
-    
     public Patient(int id, WaitingRoom waitingRoom) {
         this.id = id;
         this.waitingRoom = waitingRoom;
     }
 
-   public int getPatientId() { 
-    return id;
-}
+    public int getPatientId() {
+        return id;
+    }
 
-    
     public void finishTreatment() {
-        treatmentFinished.countDown();
-        
+        treated = true;
+        signal.release();
+    }
+
+    public void returnToWaitingRoom() {
+        signal.release();
     }
 
     @Override
     public void run() {
-        try{
+        try {
             Hospital.log("P" + id + " arrived.");
-            waitingRoom.addPatient(this);
+            while (true) {
+                waitingRoom.addPatient(this);   // 
+                signal.acquire();               //  
+                if (treated) break;             //  
 
-            treatmentFinished.await();
+            }
             Hospital.log("P" + id + " left.");
-        }catch(InterruptedException e){
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             Hospital.log("P" + id + " was interrupted");
         }
